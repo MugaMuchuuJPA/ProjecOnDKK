@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function hasProfile() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function myRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isSensei() {
+      return hasProfile() && myRole() == 'sensei';
+    }
+
+    function isStaff() {
+      return hasProfile() && (myRole() == 'sensei' || myRole() == 'instrutor');
+    }
+
+    // Perfis: cada pessoa lê o próprio; Sensei e Instrutor leem todos.
+    // No cadastro o perfil só pode nascer como "aluno".
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isStaff());
+      allow create: if signedIn()
+                    && request.auth.uid == userId
+                    && request.resource.data.uid == userId
+                    && request.resource.data.role == 'aluno';
+      allow update: if isSensei() ||
+                    (signedIn()
+                     && request.auth.uid == userId
+                     && request.resource.data.role == resource.data.role
+                     && request.resource.data.belt == resource.data.belt);
+      allow delete: if isSensei();
+    }
+
+    // Agenda e eventos: leitura aberta, escrita só da equipe.
+    match /schedule/{id} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+    match /events/{id} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Feed: leitura aberta; equipe publica; qualquer logado pode curtir (altera só "likes").
+    match /feed_posts/{id} {
+      allow read: if true;
+      allow create, delete: if isStaff();
+      allow update: if isStaff() ||
+                    (signedIn() &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']));
+    }
+
+    // Biblioteca: só logados leem; equipe edita.
+    match /knowledge_base/{id} {
+      allow read: if signedIn();
+      allow write: if isStaff();
+    }
+
+    // Avaliações: o aluno lê só as suas; só o Sensei escreve.
+    match /evaluations/{id} {
+      allow read: if signedIn() &&
+                  (resource.data.studentId == request.auth.uid || isSensei());
+      allow write: if isSensei();
+    }
+  }
+}

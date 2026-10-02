@@ -1,0 +1,22 @@
+ProjectOn DKK - projeto completo (Next.js + Tailwind + Firebase)
+
+Este zip e o projeto INTEIRO, ja com as correcoes e a logo. Descompacte na RAIZ do repositorio
+(package.json deve ficar ao lado do README.md do repositorio, nao dentro de uma subpasta).
+
+PASSO A PASSO (GitHub Codespaces, gratuito)
+1. No repositorio ProjecOnDKK, toque em Code > Codespaces > Create codespace on main.
+2. Arraste o zip para a lista de arquivos do Codespaces (barra lateral esquerda).
+3. No terminal do Codespaces:
+     unzip -o projecton-dkk-projeto-completo.zip
+     rm projecton-dkk-projeto-completo.zip
+     git add .
+     git commit -m "feat: projeto completo ProjectOn DKK"
+     git push
+4. A Vercel publica sozinha a cada push na branch main.
+
+FIREBASE (depois do primeiro deploy)
+- Firestore > Regras: cole o conteudo de firestore.rules e publique.
+- Authentication: ative E-mail/Senha e adicione o dominio .vercel.app em Dominios autorizados.
+- Cadastre as 6 chaves NEXT_PUBLIC_FIREBASE_* nas Environment Variables da Vercel
+  e faca um novo deploy (Redeploy).
+- Para tornar alguem Sensei: Firestore > users > documento da pessoa > campo role = sensei.
